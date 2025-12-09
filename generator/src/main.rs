@@ -1,55 +1,53 @@
-use core::{license::{LicensePayload, decode_license, encode_license}, machine::get_machine_id};
-use chrono::NaiveDate;
+use base64::{Engine, engine::general_purpose::STANDARD};
 use std::fs;
 
+static PUBLIC_KEY_PEM: &str = r#"
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwiCaS0V4xy4iXMYho42L
+3cNCwjuAKIlAwO87pLBlHdDyQW6ir8nhns7YW2nKWKyrcoZx6AkjTJjQINcjEMt9
+zRinIpr4k6jvYx29HNTX3Wz8BvTRmid0avA07Yxb1gzxsCA0BWQvA4kW8HtxPuRb
+X2IW3g8kn1GLXca32b4yOcSAKPW5sOl1WUCTiMuPpD/M2LyLc5uQ7SJ350mAIRZv
+RPttOEQzeExWTDes3AItR9atsjqDGPvcM2vM9sPAjFnKv42hFcJ99sK3Xstb9pQX
+ucWfarFzC1QNrqjfZOVNXjLidyNGnNc5oqH7RTY1HEhORTfyAXu/u66Mc5oPUt72
+8wIDAQAB
+-----END PUBLIC KEY-----
+"#;
+
 fn main() {
-    println!("--- Auto License Test Start ---");
-
-    // ===== 1. 获取本机机器码 =====
-    let machine_id = get_machine_id();
-
+    // 1. 获取机器码（Rust）
+    let machine_id = core::machine::get_machine_id();
     println!("Machine ID: {}", machine_id);
 
-    // ===== 2. 固定参数 =====
-    let payload = LicensePayload {
+    // 2. 加载私钥
+    let private_key_pem = fs::read_to_string("../private.pem").expect("private.pem missing!");
+
+    // 3. 生成 License
+    let license_payload = core::license::LicensePayload {
         machine_id,
-        org_name: "Local".to_string(),
-        expires_at: NaiveDate::from_ymd_opt(2099, 12, 31).unwrap(),
-        max_users: 9999,
+        org_name: "NGPACS".to_string(),
+        expires_at: "2025-12-31".to_string(),
+        max_users: 100,
     };
 
-    // ===== 3. 读取 RSA 私钥/公钥 =====
-    let private_key_pem = fs::read_to_string("../private.pem")
-        .expect("cannot read private.pem");
-    let public_key_pem = fs::read_to_string("../public.pem")
-        .expect("cannot read public.pem");
-
-    // ===== 4. 生成 License =====
-    let license = encode_license(&payload, &private_key_pem);
+    let license = core::license::generate_license(&license_payload, &private_key_pem)
+        .expect("generate license failed!");
     println!("\nGenerated License:\n{}\n", license);
 
-    // ===== 5. 校验 License =====
-    match decode_license(&license, &public_key_pem) {
-        Ok(decoded) => {
-            println!("License verification: OK");
-            println!("Decoded payload = {:?}", decoded);
+    let (payload_b64, sig_b64) = license.split_once('.').unwrap();
 
-            // ===== 6. 判断是否过期 =====
-            let today = chrono::Local::now().naive_local().date();
-            let expires = payload.expires_at;
+    // 4. 验证 License
+    let info = core::license::verify_license(
+        payload_b64,
+        sig_b64,
+        PUBLIC_KEY_PEM,
+        &license_payload.machine_id,
+    )
+    .expect("license verify failed");
 
-            if today > expires {
-                println!("⚠ License expired!");
-            } else {
-                let days_left = (expires - today).num_days();
-                println!("Valid days left: {}", days_left);
-            }
+    println!("Verified LicenseInfo:\n{:#?}", info);
 
-            println!("\n--- Auto License Test Success ---");
-        }
-        Err(err) => {
-            println!("Verification failed: {}", err);
-            println!("--- Auto License Test Failed ---");
-        }
-    }
+    // 5. 加密 LicenseInfo
+    let encrypted = core::license::encrypt_license_info(&info)
+        .expect("license encrypt failed");
+    println!("Encrypted LicenseInfo:\n{}\n", STANDARD.encode(encrypted));
 }

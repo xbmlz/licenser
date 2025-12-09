@@ -1,6 +1,6 @@
 use machineid_rs::{Encryption, HWIDComponent, IdBuilder};
 
-const SECRET_KEY: &str = "licenser_secret_key";
+const SECRET_KEY: &str = "ngpacs_secret_key";
 
 /**
  * Get the machine ID.

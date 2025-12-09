@@ -1,80 +1,51 @@
-use std::ffi::{CStr, CString, c_char, c_int};
+use jni::{
+    JNIEnv,
+    objects::{JByteArray, JClass},
+    sys::jbyteArray,
+};
+
+static PUBLIC_KEY_PEM: &str = r#"
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwiCaS0V4xy4iXMYho42L
+3cNCwjuAKIlAwO87pLBlHdDyQW6ir8nhns7YW2nKWKyrcoZx6AkjTJjQINcjEMt9
+zRinIpr4k6jvYx29HNTX3Wz8BvTRmid0avA07Yxb1gzxsCA0BWQvA4kW8HtxPuRb
+X2IW3g8kn1GLXca32b4yOcSAKPW5sOl1WUCTiMuPpD/M2LyLc5uQ7SJ350mAIRZv
+RPttOEQzeExWTDes3AItR9atsjqDGPvcM2vM9sPAjFnKv42hFcJ99sK3Xstb9pQX
+ucWfarFzC1QNrqjfZOVNXjLidyNGnNc5oqH7RTY1HEhORTfyAXu/u66Mc5oPUt72
+8wIDAQAB
+-----END PUBLIC KEY-----
+"#;
 
 #[unsafe(no_mangle)]
-pub extern "C" fn get_machine_id() -> *mut c_char {
-    let id = core::machine::get_machine_id();
+pub extern "system" fn Java_NativeLicense_verifyLicense(
+    env: JNIEnv,
+    _class: JClass,
+    payload_b64: JByteArray,
+    sig_b64: JByteArray,
+    machine_id: JByteArray,
+) -> jbyteArray {
+    let payload_bytes = env.convert_byte_array(payload_b64).unwrap_or_default();
+    let sig_bytes = env.convert_byte_array(sig_b64).unwrap_or_default();
+    let machine_bytes = env.convert_byte_array(machine_id).unwrap_or_default();
 
-    // CString 必须用 into_raw 交给 C/Java
-    let c_str = CString::new(id).unwrap();
-    c_str.into_raw()
+    let payload_str = String::from_utf8(payload_bytes).unwrap();
+    let sig_str = String::from_utf8(sig_bytes).unwrap();
+    let machine_str = String::from_utf8(machine_bytes).unwrap();
+
+    let info = core::license::verify_license(&payload_str, &sig_str, PUBLIC_KEY_PEM, &machine_str);
+    if info.is_none() {
+        return std::ptr::null_mut();
+    }
+
+    let encrypted = core::license::encrypt_license_info(&info.unwrap()).unwrap_or_default();
+    env.byte_array_from_slice(&encrypted).unwrap().into_raw()
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn free_string(ptr: *mut c_char) {
-    if !ptr.is_null() {
-        unsafe {
-            let _ = CString::from_raw(ptr);
-        }
-    }
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn verify_license(
-    license_ptr: *const c_char,
-    public_key_ptr: *const c_char,
-    err_buf: *mut c_char,
-    err_buf_len: c_int,
-) -> c_int {
-    let license_cstr = unsafe {
-        if license_ptr.is_null() {
-            return write_error("license_ptr is null", err_buf, err_buf_len);
-        }
-        CStr::from_ptr(license_ptr)
-    };
-
-    let public_key_cstr = unsafe {
-        if public_key_ptr.is_null() {
-            return write_error("public_key_ptr is null", err_buf, err_buf_len);
-        }
-        CStr::from_ptr(public_key_ptr)
-    };
-
-    let license = match license_cstr.to_str() {
-        Ok(s) => s,
-        Err(_) => return write_error("Invalid UTF-8 in license", err_buf, err_buf_len),
-    };
-
-    let public_key = match public_key_cstr.to_str() {
-        Ok(s) => s,
-        Err(_) => return write_error("Invalid UTF-8 in public key", err_buf, err_buf_len),
-    };
-
-    let result = core::license::decode_license(license, public_key);
-
-    match result {
-        Ok(status) => {
-            if status.is_expired {
-                return write_error("License expired", err_buf, err_buf_len);
-            }
-            0 // success
-        }
-        Err(err) => write_error(&err, err_buf, err_buf_len),
-    }
-}
-
-fn write_error(msg: &str, err_buf: *mut c_char, buf_len: c_int) -> c_int {
-    if err_buf.is_null() || buf_len <= 1 {
-        return 1; // cannot write msg
-    }
-
-    let msg = CString::new(msg).unwrap();
-    let bytes = msg.as_bytes_with_nul();
-
-    unsafe {
-        let max_len = (buf_len as usize) - 1;
-        let copy_len = bytes.len().min(max_len);
-        std::ptr::copy_nonoverlapping(bytes.as_ptr(), err_buf as *mut u8, copy_len);
-        *err_buf.add(copy_len) = 0;
-    }
-    1
+pub extern "system" fn Java_NativeLicense_getMachineId(
+    env: JNIEnv,
+    _class: JClass,
+) -> jbyteArray {
+    let mid = core::machine::get_machine_id();
+    env.byte_array_from_slice(&mid.as_bytes()).unwrap().into_raw()
 }
