@@ -26,37 +26,32 @@ jobs:
           path: target/release/*.dll
 
   build-linux:
-    name: Build Linux SO (CentOS 7 Compatible)
     runs-on: ubuntu-latest
-
-    container:
-      image: centos:7
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install build tools
+      - name: Build in CentOS7 container
         run: |
-          yum update -y
-          yum groupinstall -y "Development Tools"
-          yum install -y openssl-devel wget
-
-      - name: Install Rust
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          source $HOME/.cargo/env
-          rustup target add x86_64-unknown-linux-gnu
-
-      - name: Build JNI library
-        run: |
-          source $HOME/.cargo/env
-          cargo build --release --target x86_64-unknown-linux-gnu
+          docker run --rm \
+            -v "$PWD":/workspace \
+            -w /workspace \
+            centos:7 \
+            bash -c "
+              yum groupinstall -y 'Development Tools' &&
+              yum install -y openssl-devel wget &&
+              curl https://sh.rustup.rs -sSf | sh -s -- -y &&
+              source \$HOME/.cargo/env &&
+              rustup target add x86_64-unknown-linux-gnu &&
+              cargo build --release --target x86_64-unknown-linux-gnu
+            "
 
       - name: Upload SO
         uses: actions/upload-artifact@v4
         with:
           name: linux-so
           path: target/x86_64-unknown-linux-gnu/release/*.so
+
 
 
   build-mac:
