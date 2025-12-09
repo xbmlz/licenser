@@ -20,8 +20,8 @@ ucWfarFzC1QNrqjfZOVNXjLidyNGnNc5oqH7RTY1HEhORTfyAXu/u66Mc5oPUt72
 pub extern "system" fn Java_com_ngmis_ngpacs_core_license_NativeLicense_verifyLicense(
     env: JNIEnv,
     _class: JClass,
-    payload_b64: JByteArray,
     sig_b64: JByteArray,
+    payload_b64: JByteArray,
     machine_id: JByteArray,
 ) -> jbyteArray {
     let payload_bytes = env.convert_byte_array(payload_b64).unwrap_or_default();

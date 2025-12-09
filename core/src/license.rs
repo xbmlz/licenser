@@ -89,7 +89,7 @@ pub fn generate_license(payload: &LicensePayload, private_key_pem: &str) -> Resu
         .sign(Pkcs1v15Sign::new_unprefixed(), &digest)
         .unwrap();
     let sign_encode = STANDARD.encode(signature);
-    Ok(format!("{}.{}", paylod_encode, sign_encode))
+    Ok(format!("{}.{}", sign_encode, paylod_encode))
 }
 
 pub fn encrypt_license_info(info: &LicenseInfo) -> Option<Vec<u8>> {

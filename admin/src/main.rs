@@ -33,7 +33,7 @@ fn main() {
         .expect("generate license failed!");
     println!("\nGenerated License:\n{}\n", license);
 
-    let (payload_b64, sig_b64) = license.split_once('.').unwrap();
+    let (sig_b64, payload_b64 ) = license.split_once('.').unwrap();
 
     // 4. 验证 License
     let info = core::license::verify_license(
