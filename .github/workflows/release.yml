@@ -50,7 +50,7 @@ jobs:
           path: target/x86_64-unknown-linux-gnu/release/*.so
 
   build-mac:
-    name: Build Mac SO
+    name: Build Mac Dylib
     runs-on: macos-latest
 
     steps:
@@ -61,14 +61,14 @@ jobs:
         with:
           targets: x86_64-apple-darwin
 
-      - name: Build SO
+      - name: Build Dylib
         run: cargo build --release --target x86_64-apple-darwin
 
-      - name: Upload SO
+      - name: Upload Dylib
         uses: actions/upload-artifact@v4
         with:
-          name: mac-so
-          path: target/x86_64-apple-darwin/release/*.so
+          name: mac-dylib
+          path: target/x86_64-apple-darwin/release/*.dylib
 
   publish:
     name: Publish GitHub Release
