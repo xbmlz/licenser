@@ -17,7 +17,7 @@ ucWfarFzC1QNrqjfZOVNXjLidyNGnNc5oqH7RTY1HEhORTfyAXu/u66Mc5oPUt72
 "#;
 
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_NativeLicense_verifyLicense(
+pub extern "system" fn Java_com_ngmis_ngpacs_core_license_NativeLicense_verifyLicense(
     env: JNIEnv,
     _class: JClass,
     payload_b64: JByteArray,
@@ -42,7 +42,7 @@ pub extern "system" fn Java_NativeLicense_verifyLicense(
 }
 
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_NativeLicense_getMachineId(
+pub extern "system" fn Java_com_ngmis_ngpacs_core_license_NativeLicense_getMachineId(
     env: JNIEnv,
     _class: JClass,
 ) -> jbyteArray {
