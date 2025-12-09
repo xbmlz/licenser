@@ -3,6 +3,14 @@
 version = 4
 
 [[package]]
+name = "admin"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "core",
+]
+
+[[package]]
 name = "aes"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -339,14 +347,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "generator"
-version = "0.1.0"
-dependencies = [
- "base64",
- "core",
-]
-
-[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -496,6 +496,14 @@ dependencies = [
  "bitflags",
  "libc",
  "redox_syscall",
+]
+
+[[package]]
+name = "license"
+version = "0.1.0"
+dependencies = [
+ "core",
+ "jni",
 ]
 
 [[package]]
@@ -968,14 +976,6 @@ dependencies = [
  "getrandom 0.3.4",
  "js-sys",
  "wasm-bindgen",
-]
-
-[[package]]
-name = "verifier"
-version = "0.1.0"
-dependencies = [
- "core",
- "jni",
 ]
 
 [[package]]
