@@ -36,13 +36,22 @@ jobs:
           docker run --rm \
             -v "$PWD":/workspace \
             -w /workspace \
-            centos:7 \
+            centos:7.9.2009 \
             bash -c "
+              # fix yum repo for CentOS 7 (official repo is dead)
+              sed -i 's|mirrorlist=|#mirrorlist=|g' /etc/yum.repos.d/CentOS-*.repo &&
+              sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*.repo &&
+
+              yum clean all &&
+              yum makecache &&
+
               yum groupinstall -y 'Development Tools' &&
-              yum install -y openssl-devel wget &&
+              yum install -y openssl-devel wget curl &&
+
               curl https://sh.rustup.rs -sSf | sh -s -- -y &&
               source \$HOME/.cargo/env &&
               rustup target add x86_64-unknown-linux-gnu &&
+
               cargo build --release --target x86_64-unknown-linux-gnu
             "
 
@@ -51,6 +60,7 @@ jobs:
         with:
           name: linux-so
           path: target/x86_64-unknown-linux-gnu/release/*.so
+
 
 
 
