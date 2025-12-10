@@ -1,6 +1,4 @@
-use machineid_rs::{Encryption, HWIDComponent, IdBuilder};
-
-const SECRET_KEY: &str = "ngpacs_secret_key";
+use rs_machineid::{MachineId};
 
 /**
  * Get the machine ID.
@@ -12,15 +10,7 @@ const SECRET_KEY: &str = "ngpacs_secret_key";
  * The machine ID as a string.
  */
 pub fn get_machine_id() -> String {
-    let mut builder = IdBuilder::new(Encryption::SHA256);
-    builder
-        .add_component(HWIDComponent::SystemID)
-        .add_component(HWIDComponent::MacAddress)
-        .add_component(HWIDComponent::CPUID);
-
-    builder
-        .build(SECRET_KEY)
-        .unwrap_or_else(|_| "UNKNOWN".to_string())
+    MachineId::get().unwrap_or_else(|_| "UNKNOWN".to_string())
 }
 
 #[cfg(test)]
