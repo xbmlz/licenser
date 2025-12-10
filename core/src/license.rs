@@ -9,7 +9,7 @@ use sha2::{Digest, Sha256};
 type HmacSha256 = hmac::Hmac<sha2::Sha256>;
 type Aes256CbcEnc = cbc::Encryptor<aes::Aes256>;
 
-const SESSION_KEY_SALT: &[u8] = b"-ngpacs-salt-2025-";
+const SESSION_KEY_SALT: &[u8] = b"-license-salt-2025-";
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LicensePayload {

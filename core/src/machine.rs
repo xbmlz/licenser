@@ -1,4 +1,4 @@
-use rs_machineid::{MachineId};
+use rs_machineid::MachineId;
 
 /**
  * Get the machine ID.
@@ -10,7 +10,20 @@ use rs_machineid::{MachineId};
  * The machine ID as a string.
  */
 pub fn get_machine_id() -> String {
-    MachineId::get().unwrap_or_else(|_| "UNKNOWN".to_string())
+    let machine_id = MachineId::get_hashed("-app-id-2025-");
+    if !machine_id.is_ok() {
+        return "UNKNOWN".to_string();
+    }
+    let machine_id = machine_id.unwrap();
+    // slice the machine ID to 16 characters, like XXXX-XXXX-XXXX-XXXX
+    let machine_id = &machine_id[..16];
+    machine_id
+        .to_uppercase()
+        .as_bytes()
+        .chunks(4)
+        .map(|chunk| std::str::from_utf8(chunk).unwrap())
+        .collect::<Vec<&str>>()
+        .join("-")
 }
 
 #[cfg(test)]

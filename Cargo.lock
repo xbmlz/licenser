@@ -242,6 +242,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "hex"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
 name = "hmac"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -503,10 +509,13 @@ dependencies = [
 
 [[package]]
 name = "rs-machineid"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ba9c261ede00dd7f0677b763bcf5269417d9a634b63373897a1d4b01dd94d58"
+checksum = "6aa547ea6a0114a165be442151446eca22eefc86d73c88bf36c496315d23ed25"
 dependencies = [
+ "hex",
+ "hmac",
+ "sha2",
  "thiserror 2.0.17",
  "winreg",
 ]
