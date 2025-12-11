@@ -1,0 +1,52 @@
+<table class="table">
+    <tr>
+        <th>#</th>
+        <th>机构名称</th>
+        <th>服务器ID</th>
+        <th>最大用户数</th>
+        <th>到期时间</th>
+        <th>创建时间</th>
+        <th>操作</th>
+    </tr>
+    {% for lic in licenses %}
+    <tr id="row-{{ lic.id }}">
+        <td>{{ loop.index }}</td>
+        <td>{{ lic.org_name }}</td>
+        <td>{{ lic.machine_id }}</td>
+        <td>{{ lic.max_users }}</td>
+        <td>{{ lic.expires_at }}</td>
+        <td>{{ lic.created_at }}</td>
+        <td>
+            <button class="btn btn-primary btn-sm" onclick="downloadLicense('{{ lic.license }}', '{{ lic.org_name }}')">
+                下载
+            </button>
+            <button class="btn btn-danger btn-sm" hx-delete="/licenses/{{ lic.id }}" hx-target="#row-{{ lic.id }}" hx-swap="outerHTML">
+                删除
+            </button>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<script>
+    function downloadLicense(license, org) {
+        // 下载文件内容
+        const text = license;
+
+        // 创建 Blob 对象（文本文件）
+        const blob = new Blob([text], { type: "text/plain" });
+
+        // 创建一个隐藏的临时下载链接
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+
+        // 自动生成文件名：机构名称-注册码.txt
+        a.download = `${org}-license.txt`;
+        a.href = url;
+
+        // 触发点击下载
+        a.click();
+
+        // 释放 URL 对象
+        URL.revokeObjectURL(url);
+    }
+</script>

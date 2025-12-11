@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-center align-items-center" style="height: 70vh;">
+    <div class="card p-4" style="width: 360px;">
+
+        <h3 class="text-center mb-4">登录</h3>
+
+        <form method="post" autocomplete="off">
+            <div class="mb-3">
+                <label class="form-label">用户名</label>
+                <input name="username" class="form-control" placeholder="请输入用户名" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">密码</label>
+                <input name="password" type="password" class="form-control" placeholder="请输入密码" />
+            </div>
+
+            <button class="btn btn-primary w-100">登录</button>
+        </form>
+
+        {% if let Some(e) = error %}
+        <div class="alert alert-danger mt-3 py-2">{{ e }}</div>
+        {% endif %}
+
+    </div>
+</div>
+
+{% endblock %}

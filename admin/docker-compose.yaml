@@ -1,0 +1,13 @@
+services:
+  licenser:
+    image: licenser:latest
+    container_name: licenser
+    restart: always
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - /etc/machine-id:/etc/machine-id:ro
+      - ./app:/app

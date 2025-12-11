@@ -1,17 +1,27 @@
-#[macro_use]
-extern crate rocket;
-
 mod db;
+mod models;
+mod routes;
+mod session;
 
 use db::init_db;
 
-#[get("/")]
-async fn index() -> String {
-    "Hello, world!".to_string()
-}
+use axum::Router;
+use tracing::info;
 
-#[launch]
-async fn rocket() -> _ {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    tracing_subscriber::fmt::init();
     let db = init_db().await;
-    rocket::build().manage(db).mount("/", routes![index])
+    let app = Router::new()
+        .merge(routes::auth::routes())
+        .merge(routes::licenses::routes())
+        .with_state(db);
+
+    let addr = format!("0.0.0.0:{}", 3000);
+    info!("Listening on {}", addr);
+
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    axum::serve(listener, app).await.unwrap();
+
+    Ok(())
 }
