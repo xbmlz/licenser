@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS `licenses` (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  org_name TEXT NOT NULL,
+  machine_id TEXT NOT NULL,
+  license TEXT NOT NULL,
+  max_users INTEGER NOT NULL,
+  expires_at TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
