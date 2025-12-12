@@ -1,3 +1,7 @@
+{% if let Some(e) = error %}
+<div class="alert alert-danger mt-3 py-2">{{ e }}</div>
+{% endif %}
+
 <table class="table">
     <tr>
         <th>#</th>
@@ -20,7 +24,8 @@
             <button class="btn btn-primary btn-sm" onclick="downloadLicense('{{ lic.license }}', '{{ lic.org_name }}')">
                 下载
             </button>
-            <button class="btn btn-danger btn-sm" hx-delete="/licenses/{{ lic.id }}" hx-target="#row-{{ lic.id }}" hx-swap="outerHTML">
+            <button class="btn btn-danger btn-sm" hx-delete="/{{ lic.id }}" hx-target="#row-{{ lic.id }}"
+                hx-swap="outerHTML">
                 删除
             </button>
         </td>

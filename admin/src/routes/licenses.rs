@@ -44,12 +44,14 @@ gQSqEKAArSPeobawKGLcdo4=
 #[template(path = "licenses.html")]
 pub struct LicensesPage {
     licenses: Vec<License>,
+    error: Option<String>,
 }
 
 #[derive(Template)]
 #[template(path = "licenses_table.html")]
 pub struct LicensesTable {
     licenses: Vec<License>,
+    error: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -71,7 +73,10 @@ async fn list_page(Admin: Admin, State(pool): State<SqlitePool>) -> impl IntoRes
         .fetch_all(&pool)
         .await
         .unwrap();
-    let tpl = LicensesPage { licenses: list };
+    let tpl = LicensesPage {
+        licenses: list,
+        error: None,
+    };
     HtmlTemplate(tpl)
 }
 
@@ -87,6 +92,31 @@ async fn create_license(
         expires_at: form.expires_at,
     };
     let license = core::license::generate_license(&payload, PRIVATE_KEY_PEM).unwrap();
+    // 名称不能重复
+    let count = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM licenses WHERE org_name = ?")
+        .bind(payload.org_name.clone())
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    if count > 0 {
+        return HtmlTemplate(LicensesTable {
+            licenses: get_license_list(&pool).await,
+            error: Some("机构名称不能重复".to_string()),
+        });
+    }
+    // 服务器ID不能重复
+    let count = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM licenses WHERE machine_id = ?")
+        .bind(payload.machine_id.clone())
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    if count > 0 {
+        return HtmlTemplate(LicensesTable {
+            licenses: get_license_list(&pool).await,
+            error: Some("服务器ID不能重复".to_string()),
+        });
+    }
+
     sqlx::query("INSERT INTO licenses (org_name, max_users, machine_id, license, expires_at) VALUES (?, ?, ?, ?, ?)")
     .bind(payload.org_name)
     .bind(payload.max_users)
@@ -96,12 +126,14 @@ async fn create_license(
     .execute(&pool)
     .await
     .unwrap();
-    let list = sqlx::query_as::<_, License>("SELECT * FROM licenses ORDER BY id DESC")
-        .fetch_all(&pool)
+    HtmlTemplate(LicensesTable { licenses: get_license_list(&pool).await, error: None })
+}
+
+async fn get_license_list(pool: &SqlitePool) -> Vec<License> {
+    sqlx::query_as::<_, License>("SELECT * FROM licenses ORDER BY id DESC")
+        .fetch_all(pool)
         .await
-        .unwrap();
-    let tpl = LicensesTable { licenses: list };
-    HtmlTemplate(tpl)
+        .unwrap()
 }
 
 async fn delete_license(
@@ -115,7 +147,5 @@ async fn delete_license(
         .await
         .unwrap();
 
-    HtmlTemplate(LicensesTable {
-        licenses: Vec::new(),
-    })
+    "".to_string()
 }
