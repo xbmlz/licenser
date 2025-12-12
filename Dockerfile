@@ -2,8 +2,10 @@ FROM debian:bookworm-slim
 
 WORKDIR /app
 
-COPY admin .
+COPY target/release/admin /app/admin
+
+RUN chmod +x /app/admin
 
 EXPOSE 3000
 
-CMD ["admin"]
+ENTRYPOINT ["/app/admin"]
