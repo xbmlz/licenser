@@ -10,4 +10,4 @@ services:
       - TZ=Asia/Shanghai
     volumes:
       - /etc/machine-id:/etc/machine-id:ro
-      - ./app:/app
+      - ./data:/app/data

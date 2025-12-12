@@ -1,7 +1,9 @@
 use sqlx::SqlitePool;
 
 pub async fn init_db() -> SqlitePool {
-    let db = SqlitePool::connect("sqlite://license.db?mode=rwc")
+    // mkdir data dir if not exist
+    std::fs::create_dir_all("data").unwrap();
+    let db = SqlitePool::connect("sqlite://data/license.db?mode=rwc")
         .await
         .expect("connect SQLite failed");
 
