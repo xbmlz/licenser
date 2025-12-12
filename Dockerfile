@@ -2,7 +2,7 @@ FROM debian:bookworm-slim
 
 WORKDIR /app
 
-COPY target/release/admin .
+COPY admin .
 
 EXPOSE 3000
 
