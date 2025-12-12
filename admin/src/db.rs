@@ -1,7 +1,7 @@
 use sqlx::SqlitePool;
 
 pub async fn init_db() -> SqlitePool {
-    let db = SqlitePool::connect("sqlite://app.db?mode=rwc")
+    let db = SqlitePool::connect("sqlite://license.db?mode=rwc")
         .await
         .expect("connect SQLite failed");
 
