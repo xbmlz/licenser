@@ -1,9 +1,14 @@
+FROM rust:1.82-bullseye as builder
+
+WORKDIR /src
+COPY . .
+RUN cargo build --release
+
 FROM debian:bookworm-slim
 
 WORKDIR /app
-
-COPY admin .
+COPY --from=builder /src/target/release/admin .
 
 EXPOSE 3000
 
-CMD ["admin"]
+ENTRYPOINT ["./admin"]
