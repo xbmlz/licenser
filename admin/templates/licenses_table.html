@@ -1,38 +1,65 @@
-{% if let Some(e) = error %}
-<div class="alert alert-danger mt-3 py-2">{{ e }}</div>
-{% endif %}
+<div id="table-container" class="mt-3">
 
-<table class="table">
-    <tr>
-        <th>#</th>
-        <th>机构名称</th>
-        <th>服务器ID</th>
-        <th>最大用户数</th>
-        <th>到期时间</th>
-        <th>创建时间</th>
-        <th>操作</th>
-    </tr>
-    {% for lic in licenses %}
-    <tr id="row-{{ lic.id }}">
-        <td>{{ loop.index }}</td>
-        <td>{{ lic.org_name }}</td>
-        <td>{{ lic.machine_id }}</td>
-        <td>{{ lic.max_users }}</td>
-        <td>{{ lic.expires_at }}</td>
-        <td>{{ lic.created_at }}</td>
-        <td>
-            <button class="btn btn-primary btn-sm" onclick="downloadLicense('{{ lic.license }}', '{{ lic.org_name }}')">
-                下载
-            </button>
-            <button class="btn btn-danger btn-sm" hx-delete="/{{ lic.id }}" hx-target="#row-{{ lic.id }}"
-                hx-swap="outerHTML">
-                删除
-            </button>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+    {% if let Some(e) = error %}
+    <div class="alert alert-danger mt-3 py-2">{{ e }}</div>
+    {% endif %}
+
+    <table class="table">
+        <tr>
+            <th>#</th>
+            <th>机构名称</th>
+            <th>服务器ID</th>
+            <th>最大用户数</th>
+            <th>到期时间</th>
+            <th>创建时间</th>
+            <th>操作</th>
+        </tr>
+        {% for lic in licenses %}
+        <tr id="row-{{ lic.id }}">
+            <td>{{ loop.index }}</td>
+            <td>{{ lic.org_name }}</td>
+            <td>{{ lic.machine_id }}</td>
+            <td>{{ lic.max_users }}</td>
+            <td>{{ lic.expires_at }}</td>
+            <td>{{ lic.created_at }}</td>
+            <td>
+                <button class="btn btn-primary btn-sm" onclick="copyLicense('{{ lic.license }}')">
+                    复制
+                </button>
+                <button class="btn btn-primary btn-sm"
+                    onclick="downloadLicense('{{ lic.license }}', '{{ lic.org_name }}')">
+                    下载
+                </button>
+                <button class="btn btn-danger btn-sm" hx-delete="/{{ lic.id }}" hx-target="#row-{{ lic.id }}"
+                    hx-swap="outerHTML">
+                    删除
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+</div>
+
 <script>
+    // 复制注册码到剪贴板
+    function copyLicense(license) {
+        // 创建临时文本区域
+        const textarea = document.createElement("textarea");
+        textarea.value = license;
+        document.body.appendChild(textarea);
+
+        // 选择并复制文本
+        textarea.select();
+        document.execCommand("copy");
+
+        // 移除临时文本区域
+        document.body.removeChild(textarea);
+
+        // 提示用户已复制
+        alert("注册码已复制到剪贴板");
+    }
+
     function downloadLicense(license, org) {
         // 下载文件内容
         const text = license;

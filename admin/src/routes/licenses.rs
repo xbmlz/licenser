@@ -126,7 +126,10 @@ async fn create_license(
     .execute(&pool)
     .await
     .unwrap();
-    HtmlTemplate(LicensesTable { licenses: get_license_list(&pool).await, error: None })
+    HtmlTemplate(LicensesTable {
+        licenses: get_license_list(&pool).await,
+        error: None,
+    })
 }
 
 async fn get_license_list(pool: &SqlitePool) -> Vec<License> {

@@ -3,7 +3,7 @@
 <h1>注册码管理</h1>
 
 <form hx-post="/" hx-target="#table-container" hx-swap="outerHTML" class="mt-3" autocomplete="off"
-    hx-on:htmx:afterRequest="this.reset()">
+    hx-on:htmx:afterSwap="this.reset()">
     <div class="row g-3">
         <div class="col-md-3">
             <label class="form-label">机构名称</label>
@@ -31,9 +31,8 @@
     </div>
 </form>
 
-<div id="table-container" class="mt-3">
-    {% include "licenses_table.html" %}
-</div>
+<!-- licenses.html -->
+{% include "licenses_table.html" %}
 
 <!-- logout form -->
 <form hx-post="/logout" hx-target="body" hx-swap="outerHTML" class="mt-3">
