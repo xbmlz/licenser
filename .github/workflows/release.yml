@@ -26,16 +26,34 @@ jobs:
       - name: Build DLL
         run: cargo build --release
 
+      - name: Prepare DLL
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release-files | Out-Null
+
+          $files = Get-ChildItem target/release/*.dll -ErrorAction SilentlyContinue
+
+          if (-not $files) {
+            throw "No DLL files found in target/release"
+          }
+
+          foreach ($file in $files) {
+            $newName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name) + "-windows-x86_64.dll"
+            Copy-Item $file.FullName "release-files/$newName"
+          }
+
+          Get-ChildItem release-files
+
       - name: Upload DLL
         uses: actions/upload-artifact@v4
         with:
-          name: windows-x64
-          path: target/release/*.dll
+          name: windows-x86_64
+          path: release-files/*.dll
           if-no-files-found: error
 
   # ==========================================
   # Linux x86_64
-  # 使用 CentOS 7 兼容环境构建
+  # CentOS 7.9 compatible build environment
   # ==========================================
   build-linux-x86_64:
     name: Build Linux x86_64 SO
@@ -54,7 +72,7 @@ jobs:
             bash -c '
               set -e
 
-              # 修复 CentOS 7 已归档的软件源
+              # Configure CentOS 7 Vault repositories
               sed -i "s|mirrorlist=|#mirrorlist=|g" \
                 /etc/yum.repos.d/CentOS-Base.repo
 
@@ -64,33 +82,53 @@ jobs:
               yum clean all
               yum makecache
 
-              # 安装编译工具和 OpenSSL 开发依赖
               yum groupinstall -y "Development Tools"
               yum install -y openssl-devel pkgconfig wget curl
 
-              # 安装 Rust
               curl --proto "=https" --tlsv1.2 -sSf \
                 https://sh.rustup.rs | sh -s -- -y
 
               source "$HOME/.cargo/env"
 
-              # 验证 OpenSSL
               pkg-config --modversion openssl
 
-              # 编译
               cargo build --release
             '
 
-      - name: Upload SO
+      - name: Prepare Linux x86_64 Libraries
+        run: |
+          set -e
+
+          mkdir -p release-files
+
+          count=0
+
+          for file in target/release/*.so; do
+            [ -f "$file" ] || continue
+
+            filename=$(basename "$file" .so)
+            cp "$file" "release-files/${filename}-linux-x86_64.so"
+
+            count=$((count + 1))
+          done
+
+          if [ "$count" -eq 0 ]; then
+            echo "No Linux x86_64 shared libraries found"
+            exit 1
+          fi
+
+          ls -lah release-files
+
+      - name: Upload Linux x86_64
         uses: actions/upload-artifact@v4
         with:
           name: linux-x86_64
-          path: target/release/*.so
+          path: release-files/*.so
           if-no-files-found: error
 
   # ==========================================
   # Linux ARM64
-  # 兼容目标：银河麒麟 V10，glibc 2.28
+  # Target: Kylin V10, glibc 2.28
   # ==========================================
   build-linux-aarch64:
     name: Build Linux ARM64 SO
@@ -109,39 +147,78 @@ jobs:
             bash -lc '
               set -e
 
-              # 安装 OpenSSL 开发库和 pkg-config
+              # Install OpenSSL development dependencies
               yum install -y openssl-devel pkgconf-pkg-config
 
-              # 确保 pkg-config 可以找到 OpenSSL
               export PKG_CONFIG_PATH="/usr/lib64/pkgconfig:/usr/local/lib/pkgconfig"
 
-              # 验证 OpenSSL 开发环境
+              # Verify OpenSSL
               pkg-config --modversion openssl
               pkg-config --cflags --libs openssl
 
-              # 安装 Rust
+              # Install Rust
               curl --proto "=https" --tlsv1.2 -sSf \
                 https://sh.rustup.rs | sh -s -- -y
 
               source "$HOME/.cargo/env"
 
-              # 确认编译架构
-              rustc -vV
+              echo "Architecture:"
               uname -m
 
-              # 编译 ARM64 动态库
+              rustc -vV
+
+              # Build native ARM64 library
               cargo build --release
             '
 
-      - name: Check Linux ARM64 Library
+      - name: Check Linux ARM64 Libraries
         run: |
-          file target/release/*.so
+          set -e
 
-      - name: Upload ARM64 SO
+          echo "ARM64 shared libraries:"
+
+          find target/release -maxdepth 1 -type f -name "*.so" -print
+
+          files=(target/release/*.so)
+
+          if [ ! -f "${files[0]}" ]; then
+            echo "No ARM64 shared libraries found"
+            exit 1
+          fi
+
+          file "${files[@]}"
+
+          readelf -h "${files[0]}" | grep -E "Class:|Machine:"
+
+      - name: Prepare Linux ARM64 Libraries
+        run: |
+          set -e
+
+          mkdir -p release-files
+
+          count=0
+
+          for file in target/release/*.so; do
+            [ -f "$file" ] || continue
+
+            filename=$(basename "$file" .so)
+            cp "$file" "release-files/${filename}-linux-aarch64.so"
+
+            count=$((count + 1))
+          done
+
+          if [ "$count" -eq 0 ]; then
+            echo "No Linux ARM64 shared libraries found"
+            exit 1
+          fi
+
+          ls -lah release-files
+
+      - name: Upload Linux ARM64
         uses: actions/upload-artifact@v4
         with:
           name: linux-aarch64
-          path: target/release/*.so
+          path: release-files/*.so
           if-no-files-found: error
 
   # ==========================================
@@ -163,11 +240,36 @@ jobs:
       - name: Build Dylib
         run: cargo build --release --target aarch64-apple-darwin
 
-      - name: Upload Dylib
+      - name: Prepare macOS ARM64 Libraries
+        shell: bash
+        run: |
+          set -e
+
+          mkdir -p release-files
+
+          count=0
+
+          for file in target/aarch64-apple-darwin/release/*.dylib; do
+            [ -f "$file" ] || continue
+
+            filename=$(basename "$file" .dylib)
+            cp "$file" "release-files/${filename}-macos-aarch64.dylib"
+
+            count=$((count + 1))
+          done
+
+          if [ "$count" -eq 0 ]; then
+            echo "No macOS ARM64 dylibs found"
+            exit 1
+          fi
+
+          ls -lah release-files
+
+      - name: Upload macOS ARM64
         uses: actions/upload-artifact@v4
         with:
           name: macos-aarch64
-          path: target/aarch64-apple-darwin/release/*.dylib
+          path: release-files/*.dylib
           if-no-files-found: error
 
   # ==========================================
@@ -189,8 +291,33 @@ jobs:
         with:
           path: artifacts
 
-      - name: List Artifacts
-        run: find artifacts -type f
+      - name: List Downloaded Artifacts
+        run: |
+          echo "Downloaded artifacts:"
+          find artifacts -type f -print
+
+      - name: Verify Release Files
+        run: |
+          set -e
+
+          count=$(find artifacts -type f \
+            \( -name "*.dll" -o -name "*.so" -o -name "*.dylib" \) \
+            | wc -l)
+
+          echo "Total release files: $count"
+
+          if [ "$count" -eq 0 ]; then
+            echo "ERROR: No release files found"
+            exit 1
+          fi
+
+          echo "Linux ARM64 files:"
+          find artifacts -type f -name "*linux-aarch64.so" -print
+
+          if ! find artifacts -type f -name "*linux-aarch64.so" | grep -q .; then
+            echo "ERROR: Linux ARM64 libraries are missing"
+            exit 1
+          fi
 
       - name: Publish Release
         uses: softprops/action-gh-release@v2
@@ -199,5 +326,6 @@ jobs:
             artifacts/**/*.dll
             artifacts/**/*.so
             artifacts/**/*.dylib
+          fail_on_unmatched_files: true
           draft: false
           prerelease: false
